@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ServicioRM-Jedi | Notas de Servicio</title>
+    <!-- Librería jsPDF para generar el PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --background: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #004494;
+        }
+        
+        .btn-whatsapp {
+            background-color: #25D366;
+            display: none; /* Se muestra hasta generar el PDF */
+        }
+
+        .btn-whatsapp:hover {
+            background-color: #1ebc5a;
+        }
+
+        /* Estilos de la tabla */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Diseño responsivo */
+        @media (min-width: 600px) {
+            .form-row {
+                display: flex;
+                gap: 15px;
+            }
+            .form-row .form-group {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>ServicioRM-Jedi</h1>
+        
+        <!-- Formulario de Recepción -->
+        <div class="card">
+            <h2>Nueva Nota de Servicio</h2>
+            <form id="notaForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cliente">Nombre del Cliente</label>
+                        <input type="text" id="cliente" required placeholder="Ej. Juan Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label for="telefono">Número de Contacto (WhatsApp)</label>
+                        <input type="tel" id="telefono" required placeholder="10 dígitos">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="marca">Marca del Equipo</label>
+                        <input type="text" id="marca" required placeholder="Ej. Lenovo, HP, Dell">
+                    </div>
+                    <div class="form-group">
+                        <label for="modelo">Modelo</label>
+                        <input type="text" id="modelo" required placeholder="Ej. ThinkPad T480">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="servicio">Servicio a Realizar</label>
+                    <select id="servicio" required>
+                        <option value="">Seleccione un servicio...</option>
+                        <option value="Revisión para diagnóstico">Revisión para diagnóstico</option>
+                        <option value="Mantenimiento general">Mantenimiento general preventivo/correctivo</option>
+                        <option value="Instalación de Windows">Instalación de sistema operativo (Windows/Linux)</option>
+                        <option value="Instalación de Office / Software">Instalación de Office / Software</option>
+                        <option value="Reparación de hardware">Reparación de hardware (Cambio de pieza/soldadura)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="costo">Costo Estimado ($)</label>
+                    <input type="number" id="costo" required placeholder="Ej. 350">
+                </div>
+
+                <button type="submit" class="btn">Generar PDF</button>
+                <button type="button" id="btnWhatsapp" class="btn btn-whatsapp">Compartir resumen por WhatsApp</button>
+            </form>
+        </div>
+
+        <!-- Tabla de Precios -->
+        <div class="card">
+            <h2>Lista de Servicios y Precios</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Servicio</th>
+                        <th>Costo Aproximado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Revisión y Diagnóstico</td>
+                        <td>$150.00</td>
+                    </tr>
+                    <tr>
+                        <td>Mantenimiento Físico General</td>
+                        <td>$350.00</td>
+                    </tr>
+                    <tr>
+                        <td>Instalación de Windows (Formateo)</td>
+                        <td>$400.00</td>
+                    </tr>
+                    <tr>
+                        <td>Instalación de Paquetería (Office, etc.)</td>
+                        <td>$200.00</td>
+                    </tr>
+                    <tr>
+                        <td>Respaldo de Información</td>
+                        <td>Desde $150.00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('notaForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Evita que se recargue la página
+
+            // Obtener los valores del formulario
+            const cliente = document.getElementById('cliente').value;
+            const telefono = document.getElementById('telefono').value;
+            const marca = document.getElementById('marca').value;
+            const modelo = document.getElementById('modelo').value;
+            const servicio = document.getElementById('servicio').value;
+            const costo = document.getElementById('costo').value;
+            const fecha = new Date().toLocaleDateString('es-MX');
+
+            // 1. Generar el PDF usando jsPDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Diseño del PDF
+            doc.setFontSize(22);
+            doc.setTextColor(0, 86, 179);
+            doc.text("ServicioRM-Jedi", 20, 20);
+            
+            doc.setFontSize(16);
+            doc.setTextColor(0, 0, 0);
+            doc.text("Nota de Recepción de Equipo", 20, 30);
+            
+            doc.setFontSize(12);
+            doc.text(`Fecha: ${fecha}`, 150, 20);
+
+            doc.setLineWidth(0.5);
+            doc.line(20, 35, 190, 35);
+
+            // Datos del Cliente
+            doc.setFont(undefined, 'bold');
+            doc.text("Datos del Cliente:", 20, 45);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Nombre: ${cliente}`, 20, 55);
+            doc.text(`Teléfono: ${telefono}`, 20, 65);
+
+            // Datos del Equipo
+            doc.setFont(undefined, 'bold');
+            doc.text("Datos del Equipo:", 20, 80);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Marca: ${marca}`, 20, 90);
+            doc.text(`Modelo: ${modelo}`, 20, 100);
+
+            // Servicio
+            doc.setFont(undefined, 'bold');
+            doc.text("Detalles del Servicio:", 20, 115);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Descripción: ${servicio}`, 20, 125);
+            
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text(`Costo Total Estimado: $${costo} MXN`, 20, 140);
+
+            // Guardar el PDF automáticamente
+            const nombreArchivo = `Nota_${cliente.replace(/\s+/g, '_')}_${fecha.replace(/\//g, '-')}.pdf`;
+            doc.save(nombreArchivo);
+
+            // 2. Preparar el botón de WhatsApp
+            const btnWhatsapp = document.getElementById('btnWhatsapp');
+            btnWhatsapp.style.display = 'block';
+            
+            // Crear el mensaje codificado para la URL
+            const mensaje = `Hola ${cliente},\n\nGracias por confiar en *ServicioRM-Jedi*.\nHemos recibido tu equipo (*${marca} ${modelo}*) para el siguiente servicio:\n🛠️ *${servicio}*\n💰 *Costo estimado:* $${costo}\n\nTe acabo de generar y guardar tu nota de servicio en PDF. ¡Te mantendré informado del progreso!`;
+            const urlWhatsapp = `https://wa.me/52${telefono}?text=${encodeURIComponent(mensaje)}`;
+
+            btnWhatsapp.onclick = function() {
+                window.open(urlWhatsapp, '_blank');
+            };
+        });
+    </script>
+</body>
+</html>
