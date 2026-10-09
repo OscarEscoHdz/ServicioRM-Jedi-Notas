@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ServicioRM-Jedi | Notas de Servicio</title>
-    <!-- Librería jsPDF para generar el PDF -->
+    <title>ServicioRM-Jedi | Notas de Servicio y Gestión</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
@@ -24,7 +23,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
         }
 
@@ -39,81 +38,60 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             margin-bottom: 20px;
+            overflow-x: auto;
         }
 
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
         input, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 16px;
+            width: 100%; padding: 10px; border: 1px solid #ccc;
+            border-radius: 4px; box-sizing: border-box; font-size: 16px;
         }
 
         .btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-            margin-top: 10px;
-            transition: background-color 0.3s;
+            background-color: var(--primary-color); color: white; border: none;
+            padding: 12px 20px; border-radius: 4px; cursor: pointer;
+            font-size: 16px; width: 100%; margin-top: 10px; transition: 0.3s;
         }
-
-        .btn:hover {
-            background-color: #004494;
-        }
+        .btn:hover { background-color: #004494; }
         
-        .btn-whatsapp {
-            background-color: #25D366;
-            display: none; /* Se muestra hasta generar el PDF */
-        }
+        .btn-whatsapp { background-color: #25D366; display: none; }
+        .btn-whatsapp:hover { background-color: #1ebc5a; }
 
-        .btn-whatsapp:hover {
-            background-color: #1ebc5a;
+        /* Botones pequeños para la tabla CRUD */
+        .btn-sm {
+            padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; color: white; margin: 2px;
         }
+        .btn-edit { background-color: #f0ad4e; color: black; }
+        .btn-danger { background-color: #d9534f; }
+        .btn-success { background-color: #5cb85c; }
 
-        /* Estilos de la tabla */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
+        /* Estilos de tabla */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 700px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; font-size: 14px; }
+        th { background-color: var(--primary-color); color: white; }
+        
+        .estado-select { font-weight: bold; padding: 5px; cursor: pointer; }
 
-        th, td {
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        /* Diseño responsivo */
         @media (min-width: 600px) {
-            .form-row {
-                display: flex;
-                gap: 15px;
-            }
-            .form-row .form-group {
-                flex: 1;
-            }
+            .form-row { display: flex; gap: 15px; }
+            .form-row .form-group { flex: 1; }
         }
+
+        /* Estilos para las tarjetas de Mercado Libre */
+        .componentes-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px; margin-top: 15px;
+        }
+        .componente-card {
+            border: 1px solid #ddd; border-radius: 8px; padding: 15px;
+            text-align: center; background-color: #fafafa;
+        }
+        .componente-img { max-width: 100px; height: 100px; object-fit: contain; margin-bottom: 10px; }
+        .componente-titulo { font-size: 14px; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .precio-original { font-size: 12px; color: #888; text-decoration: line-through; }
+        .precio-final { font-size: 18px; font-weight: bold; color: var(--primary-color); margin: 5px 0; }
+        .badge-ganancia { background-color: #28a745; color: white; font-size: 11px; padding: 3px 6px; border-radius: 4px; display: inline-block; }
     </style>
 </head>
 <body>
@@ -139,7 +117,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="marca">Marca del Equipo</label>
-                        <input type="text" id="marca" required placeholder="Ej. Lenovo, HP, Dell">
+                        <input type="text" id="marca" required placeholder="Ej. Lenovo, HP">
                     </div>
                     <div class="form-group">
                         <label for="modelo">Modelo</label>
@@ -153,9 +131,9 @@
                         <option value="">Seleccione un servicio...</option>
                         <option value="Revisión para diagnóstico">Revisión para diagnóstico</option>
                         <option value="Mantenimiento general">Mantenimiento general preventivo/correctivo</option>
-                        <option value="Instalación de Windows">Instalación de sistema operativo (Windows/Linux)</option>
+                        <option value="Instalación de Windows">Instalación de sistema operativo</option>
                         <option value="Instalación de Office / Software">Instalación de Office / Software</option>
-                        <option value="Reparación de hardware">Reparación de hardware (Cambio de pieza/soldadura)</option>
+                        <option value="Reparación de hardware">Reparación de hardware</option>
                     </select>
                 </div>
 
@@ -164,14 +142,35 @@
                     <input type="number" id="costo" required placeholder="Ej. 350">
                 </div>
 
-                <button type="submit" class="btn">Generar PDF</button>
+                <button type="submit" class="btn">Generar PDF y Guardar Registro</button>
                 <button type="button" id="btnWhatsapp" class="btn btn-whatsapp">Compartir resumen por WhatsApp</button>
             </form>
         </div>
 
+        <!-- Registro de Clientes y Equipos (CRUD) -->
+        <div class="card">
+            <h2>Registro de Clientes y Equipos</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Equipo</th>
+                        <th>Teléfono</th>
+                        <th>Trabajo Realizado</th>
+                        <th>Costo ($)</th>
+                        <th>Estado de Pago</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-clientes">
+                    <!-- Los registros se llenarán aquí con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
         <!-- Tabla de Precios -->
         <div class="card">
-            <h2>Lista de Servicios y Precios</h2>
+            <h2>Lista de Servicios y Precios Base</h2>
             <table>
                 <thead>
                     <tr>
@@ -180,36 +179,122 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Revisión y Diagnóstico</td>
-                        <td>$150.00</td>
-                    </tr>
-                    <tr>
-                        <td>Mantenimiento Físico General</td>
-                        <td>$350.00</td>
-                    </tr>
-                    <tr>
-                        <td>Instalación de Windows (Formateo)</td>
-                        <td>$400.00</td>
-                    </tr>
-                    <tr>
-                        <td>Instalación de Paquetería (Office, etc.)</td>
-                        <td>$200.00</td>
-                    </tr>
-                    <tr>
-                        <td>Respaldo de Información</td>
-                        <td>Desde $150.00</td>
-                    </tr>
+                    <tr><td>Revisión y Diagnóstico</td><td>$150.00</td></tr>
+                    <tr><td>Mantenimiento Físico General</td><td>$350.00</td></tr>
+                    <tr><td>Instalación de Windows (Formateo)</td><td>$400.00</td></tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Cotizador de Componentes ML -->
+        <div class="card">
+            <h2>Cotizador de Componentes</h2>
+            <div id="contenedor-componentes" class="componentes-grid"></div>
         </div>
     </div>
 
     <script>
-        document.getElementById('notaForm').addEventListener('submit', function(e) {
-            e.preventDefault(); // Evita que se recargue la página
+        // --- 1. LÓGICA DEL REGISTRO (CRUD) Y LOCALSTORAGE ---
+        // Cargamos los registros guardados o iniciamos un arreglo vacío
+        let registrosBD = JSON.parse(localStorage.getItem('servicioRM_clientes')) || [];
 
-            // Obtener los valores del formulario
+        function guardarEnMemoria() {
+            localStorage.setItem('servicioRM_clientes', JSON.stringify(registrosBD));
+        }
+
+        function renderizarTabla() {
+            const tbody = document.getElementById('tbody-clientes');
+            tbody.innerHTML = ''; // Limpiamos la tabla
+
+            registrosBD.forEach((registro, index) => {
+                const tr = document.createElement('tr');
+
+                if (registro.editando) {
+                    // MODO EDICIÓN
+                    tr.innerHTML = `
+                        <td><input type="text" id="ed-cliente-${index}" value="${registro.cliente}"></td>
+                        <td><input type="text" id="ed-equipo-${index}" value="${registro.equipo}"></td>
+                        <td><input type="text" id="ed-telefono-${index}" value="${registro.telefono}"></td>
+                        <td><input type="text" id="ed-trabajo-${index}" value="${registro.trabajo}"></td>
+                        <td><input type="number" id="ed-costo-${index}" value="${registro.costo}" style="width: 80px;"></td>
+                        <td>
+                            <select id="ed-estado-${index}" class="estado-select">
+                                <option value="Pendiente de pago" ${registro.estado === 'Pendiente de pago' ? 'selected' : ''}>Pendiente de pago</option>
+                                <option value="Pagado" ${registro.estado === 'Pagado' ? 'selected' : ''}>Pagado</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn-sm btn-success" onclick="guardarEdicion(${index})">✔</button>
+                            <button class="btn-sm btn-danger" onclick="cancelarEdicion(${index})">✖</button>
+                        </td>
+                    `;
+                } else {
+                    // MODO LECTURA
+                    let colorEstado = registro.estado === 'Pagado' ? '#28a745' : '#dc3545';
+                    tr.innerHTML = `
+                        <td>${registro.cliente}</td>
+                        <td>${registro.equipo}</td>
+                        <td>${registro.telefono}</td>
+                        <td>${registro.trabajo}</td>
+                        <td>$${registro.costo}</td>
+                        <td>
+                            <select onchange="cambiarEstadoDesdeSelect(${index}, this.value)" class="estado-select" style="color: ${colorEstado};">
+                                <option value="Pendiente de pago" ${registro.estado === 'Pendiente de pago' ? 'selected' : ''}>Pendiente de pago</option>
+                                <option value="Pagado" ${registro.estado === 'Pagado' ? 'selected' : ''}>Pagado</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn-sm btn-edit" onclick="activarEdicion(${index})">Editar</button>
+                            <button class="btn-sm btn-danger" onclick="eliminarRegistro(${index})">Borrar</button>
+                        </td>
+                    `;
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Funciones del CRUD
+        function cambiarEstadoDesdeSelect(index, nuevoEstado) {
+            registrosBD[index].estado = nuevoEstado;
+            guardarEnMemoria();
+            renderizarTabla();
+        }
+
+        function activarEdicion(index) {
+            registrosBD[index].editando = true;
+            renderizarTabla();
+        }
+
+        function cancelarEdicion(index) {
+            registrosBD[index].editando = false;
+            renderizarTabla();
+        }
+
+        function guardarEdicion(index) {
+            registrosBD[index].cliente = document.getElementById(`ed-cliente-${index}`).value;
+            registrosBD[index].equipo = document.getElementById(`ed-equipo-${index}`).value;
+            registrosBD[index].telefono = document.getElementById(`ed-telefono-${index}`).value;
+            registrosBD[index].trabajo = document.getElementById(`ed-trabajo-${index}`).value;
+            registrosBD[index].costo = document.getElementById(`ed-costo-${index}`).value;
+            registrosBD[index].estado = document.getElementById(`ed-estado-${index}`).value;
+            registrosBD[index].editando = false;
+            
+            guardarEnMemoria();
+            renderizarTabla();
+        }
+
+        function eliminarRegistro(index) {
+            if(confirm('¿Estás seguro de que deseas borrar este registro?')) {
+                registrosBD.splice(index, 1);
+                guardarEnMemoria();
+                renderizarTabla();
+            }
+        }
+
+        // --- 2. LÓGICA DEL FORMULARIO PRINCIPAL Y PDF ---
+        document.getElementById('notaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
             const cliente = document.getElementById('cliente').value;
             const telefono = document.getElementById('telefono').value;
             const marca = document.getElementById('marca').value;
@@ -218,11 +303,25 @@
             const costo = document.getElementById('costo').value;
             const fecha = new Date().toLocaleDateString('es-MX');
 
-            // 1. Generar el PDF usando jsPDF
+            // --- GUARDAR EN LA TABLA DE REGISTROS ---
+            const nuevoRegistro = {
+                cliente: cliente,
+                equipo: `${marca} ${modelo}`,
+                telefono: telefono,
+                trabajo: servicio,
+                costo: costo,
+                estado: 'Pendiente de pago', // <-- Por defecto como lo pediste
+                editando: false
+            };
+            
+            registrosBD.unshift(nuevoRegistro); // unshift agrega el registro al inicio de la tabla
+            guardarEnMemoria();
+            renderizarTabla();
+
+            // --- GENERAR EL PDF ---
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            // Diseño del PDF
             doc.setFontSize(22);
             doc.setTextColor(0, 86, 179);
             doc.text("ServicioRM-Jedi", 20, 20);
@@ -233,49 +332,73 @@
             
             doc.setFontSize(12);
             doc.text(`Fecha: ${fecha}`, 150, 20);
-
             doc.setLineWidth(0.5);
             doc.line(20, 35, 190, 35);
 
-            // Datos del Cliente
-            doc.setFont(undefined, 'bold');
-            doc.text("Datos del Cliente:", 20, 45);
-            doc.setFont(undefined, 'normal');
-            doc.text(`Nombre: ${cliente}`, 20, 55);
-            doc.text(`Teléfono: ${telefono}`, 20, 65);
+            doc.setFont(undefined, 'bold'); doc.text("Datos del Cliente:", 20, 45);
+            doc.setFont(undefined, 'normal'); doc.text(`Nombre: ${cliente}`, 20, 55); doc.text(`Teléfono: ${telefono}`, 20, 65);
 
-            // Datos del Equipo
-            doc.setFont(undefined, 'bold');
-            doc.text("Datos del Equipo:", 20, 80);
-            doc.setFont(undefined, 'normal');
-            doc.text(`Marca: ${marca}`, 20, 90);
-            doc.text(`Modelo: ${modelo}`, 20, 100);
+            doc.setFont(undefined, 'bold'); doc.text("Datos del Equipo:", 20, 80);
+            doc.setFont(undefined, 'normal'); doc.text(`Marca: ${marca}`, 20, 90); doc.text(`Modelo: ${modelo}`, 20, 100);
 
-            // Servicio
-            doc.setFont(undefined, 'bold');
-            doc.text("Detalles del Servicio:", 20, 115);
-            doc.setFont(undefined, 'normal');
-            doc.text(`Descripción: ${servicio}`, 20, 125);
+            doc.setFont(undefined, 'bold'); doc.text("Detalles del Servicio:", 20, 115);
+            doc.setFont(undefined, 'normal'); doc.text(`Descripción: ${servicio}`, 20, 125);
             
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
+            doc.setFontSize(14); doc.setFont(undefined, 'bold');
             doc.text(`Costo Total Estimado: $${costo} MXN`, 20, 140);
 
-            // Guardar el PDF automáticamente
             const nombreArchivo = `Nota_${cliente.replace(/\s+/g, '_')}_${fecha.replace(/\//g, '-')}.pdf`;
             doc.save(nombreArchivo);
 
-            // 2. Preparar el botón de WhatsApp
+            // --- MOSTRAR BOTÓN WHATSAPP ---
             const btnWhatsapp = document.getElementById('btnWhatsapp');
             btnWhatsapp.style.display = 'block';
             
-            // Crear el mensaje codificado para la URL
-            const mensaje = `Hola ${cliente},\n\nGracias por confiar en *ServicioRM-Jedi*.\nHemos recibido tu equipo (*${marca} ${modelo}*) para el siguiente servicio:\n🛠️ *${servicio}*\n💰 *Costo estimado:* $${costo}\n\nTe acabo de generar y guardar tu nota de servicio en PDF. ¡Te mantendré informado del progreso!`;
+            const mensaje = `Hola ${cliente},\n\nGracias por confiar en *ServicioRM-Jedi*.\nHemos recibido tu equipo (*${marca} ${modelo}*) para el siguiente servicio:\n🛠️ *${servicio}*\n💰 *Costo estimado:* $${costo}\n\nTe acabo de generar y guardar tu nota de servicio en PDF. ¡Te mantendré informado!`;
             const urlWhatsapp = `https://wa.me/52${telefono}?text=${encodeURIComponent(mensaje)}`;
 
-            btnWhatsapp.onclick = function() {
-                window.open(urlWhatsapp, '_blank');
-            };
+            btnWhatsapp.onclick = function() { window.open(urlWhatsapp, '_blank'); };
+            
+            // Opcional: Limpiar el formulario tras generar la nota
+            document.getElementById('notaForm').reset();
+        });
+
+        // --- 3. LÓGICA DEL COTIZADOR MERCADO LIBRE ---
+        const MARGEN_GANANCIA = 1.30; 
+        const productosML = ['MLM1443214567', 'MLM9876543210']; // Pon aquí tus IDs reales
+
+        async function cargarPreciosComponentes() {
+            const contenedor = document.getElementById('contenedor-componentes');
+            if(productosML.length === 0) { contenedor.innerHTML = '<p>Agrega IDs de MercadoLibre en el código.</p>'; return; }
+            contenedor.innerHTML = '';
+
+            for (const id of productosML) {
+                try {
+                    const respuesta = await fetch(`https://api.mercadolibre.com/items/${id}`);
+                    if (!respuesta.ok) continue;
+                    const datos = await respuesta.json();
+                    
+                    const precioOriginal = datos.price;
+                    const precioConInstalacion = Math.ceil(precioOriginal * MARGEN_GANANCIA);
+                    
+                    const card = document.createElement('div');
+                    card.className = 'componente-card';
+                    card.innerHTML = `
+                        <img src="${datos.thumbnail}" alt="Componente" class="componente-img">
+                        <div class="componente-titulo" title="${datos.title}">${datos.title}</div>
+                        <div class="precio-original">Costo base: $${precioOriginal.toLocaleString('es-MX')}</div>
+                        <div class="precio-final">Cotizar en: $${precioConInstalacion.toLocaleString('es-MX')}</div>
+                        <div class="badge-ganancia">Incluye instalación</div>
+                    `;
+                    contenedor.appendChild(card);
+                } catch (error) { console.error(`Error con ${id}:`, error); }
+            }
+        }
+
+        // Ejecutar funciones al cargar la página
+        window.addEventListener('DOMContentLoaded', () => {
+            renderizarTabla();
+            cargarPreciosComponentes();
         });
     </script>
 </body>
