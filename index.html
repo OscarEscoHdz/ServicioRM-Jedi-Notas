@@ -55,10 +55,13 @@
         }
         .btn:hover { background-color: #004494; }
         
+        /* Nuevo estilo para el botón secundario */
+        .btn-secondary { background-color: #6c757d; }
+        .btn-secondary:hover { background-color: #5a6268; }
+
         .btn-whatsapp { background-color: #25D366; display: none; }
         .btn-whatsapp:hover { background-color: #1ebc5a; }
 
-        /* Botones pequeños para la tabla CRUD */
         .btn-sm {
             padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; color: white; margin: 2px;
         }
@@ -66,7 +69,6 @@
         .btn-danger { background-color: #d9534f; }
         .btn-success { background-color: #5cb85c; }
 
-        /* Estilos de tabla */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 700px; }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; font-size: 14px; }
         th { background-color: var(--primary-color); color: white; }
@@ -78,7 +80,6 @@
             .form-row .form-group { flex: 1; }
         }
 
-        /* Estilos para las tarjetas de Mercado Libre */
         .componentes-grid {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 15px; margin-top: 15px;
@@ -99,7 +100,6 @@
     <div class="container">
         <h1>ServicioRM-Jedi</h1>
         
-        <!-- Formulario de Recepción -->
         <div class="card">
             <h2>Nueva Nota de Servicio</h2>
             <form id="notaForm">
@@ -142,12 +142,14 @@
                     <input type="number" id="costo" required placeholder="Ej. 350">
                 </div>
 
-                <button type="submit" class="btn">Generar PDF y Guardar Registro</button>
+                <button type="submit" id="btnGenerar" class="btn">Generar PDF y Guardar Registro</button>
+                <!-- Nuevo botón de guardado simple -->
+                <button type="button" id="btnSoloGuardar" class="btn btn-secondary">Solo Guardar Registro (Sin PDF)</button>
+                
                 <button type="button" id="btnWhatsapp" class="btn btn-whatsapp">Compartir resumen por WhatsApp</button>
             </form>
         </div>
 
-        <!-- Registro de Clientes y Equipos (CRUD) -->
         <div class="card">
             <h2>Registro de Clientes y Equipos</h2>
             <table>
@@ -163,12 +165,10 @@
                     </tr>
                 </thead>
                 <tbody id="tbody-clientes">
-                    <!-- Los registros se llenarán aquí con JavaScript -->
                 </tbody>
             </table>
         </div>
 
-        <!-- Tabla de Precios -->
         <div class="card">
             <h2>Lista de Servicios y Precios Base</h2>
             <table>
@@ -186,7 +186,6 @@
             </table>
         </div>
 
-        <!-- Cotizador de Componentes ML -->
         <div class="card">
             <h2>Cotizador de Componentes</h2>
             <div id="contenedor-componentes" class="componentes-grid"></div>
@@ -195,7 +194,6 @@
 
     <script>
         // --- 1. LÓGICA DEL REGISTRO (CRUD) Y LOCALSTORAGE ---
-        // Cargamos los registros guardados o iniciamos un arreglo vacío
         let registrosBD = JSON.parse(localStorage.getItem('servicioRM_clientes')) || [];
 
         function guardarEnMemoria() {
@@ -204,13 +202,12 @@
 
         function renderizarTabla() {
             const tbody = document.getElementById('tbody-clientes');
-            tbody.innerHTML = ''; // Limpiamos la tabla
+            tbody.innerHTML = '';
 
             registrosBD.forEach((registro, index) => {
                 const tr = document.createElement('tr');
 
                 if (registro.editando) {
-                    // MODO EDICIÓN
                     tr.innerHTML = `
                         <td><input type="text" id="ed-cliente-${index}" value="${registro.cliente}"></td>
                         <td><input type="text" id="ed-equipo-${index}" value="${registro.equipo}"></td>
@@ -229,7 +226,6 @@
                         </td>
                     `;
                 } else {
-                    // MODO LECTURA
                     let colorEstado = registro.estado === 'Pagado' ? '#28a745' : '#dc3545';
                     tr.innerHTML = `
                         <td>${registro.cliente}</td>
@@ -253,22 +249,14 @@
             });
         }
 
-        // Funciones del CRUD
         function cambiarEstadoDesdeSelect(index, nuevoEstado) {
             registrosBD[index].estado = nuevoEstado;
             guardarEnMemoria();
             renderizarTabla();
         }
 
-        function activarEdicion(index) {
-            registrosBD[index].editando = true;
-            renderizarTabla();
-        }
-
-        function cancelarEdicion(index) {
-            registrosBD[index].editando = false;
-            renderizarTabla();
-        }
+        function activarEdicion(index) { registrosBD[index].editando = true; renderizarTabla(); }
+        function cancelarEdicion(index) { registrosBD[index].editando = false; renderizarTabla(); }
 
         function guardarEdicion(index) {
             registrosBD[index].cliente = document.getElementById(`ed-cliente-${index}`).value;
@@ -291,32 +279,51 @@
             }
         }
 
-        // --- 2. LÓGICA DEL FORMULARIO PRINCIPAL Y PDF ---
-        document.getElementById('notaForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
+        // --- FUNCIÓN AISLADA PARA GUARDAR REGISTROS ---
+        function procesarGuardadoRegistro() {
             const cliente = document.getElementById('cliente').value;
             const telefono = document.getElementById('telefono').value;
             const marca = document.getElementById('marca').value;
             const modelo = document.getElementById('modelo').value;
             const servicio = document.getElementById('servicio').value;
             const costo = document.getElementById('costo').value;
-            const fecha = new Date().toLocaleDateString('es-MX');
 
-            // --- GUARDAR EN LA TABLA DE REGISTROS ---
             const nuevoRegistro = {
                 cliente: cliente,
                 equipo: `${marca} ${modelo}`,
                 telefono: telefono,
                 trabajo: servicio,
                 costo: costo,
-                estado: 'Pendiente de pago', // <-- Por defecto como lo pediste
+                estado: 'Pendiente de pago',
                 editando: false
             };
             
-            registrosBD.unshift(nuevoRegistro); // unshift agrega el registro al inicio de la tabla
+            registrosBD.unshift(nuevoRegistro);
             guardarEnMemoria();
             renderizarTabla();
+            
+            return { cliente, telefono, marca, modelo, servicio, costo, fecha: new Date().toLocaleDateString('es-MX') };
+        }
+
+        // --- EVENTO: SOLO GUARDAR ---
+        document.getElementById('btnSoloGuardar').addEventListener('click', function() {
+            const form = document.getElementById('notaForm');
+            // Validamos manualmente que los campos requeridos estén llenos
+            if (form.checkValidity()) {
+                procesarGuardadoRegistro();
+                form.reset(); // Limpiamos el formulario
+                alert('Registro guardado exitosamente en la tabla.');
+            } else {
+                form.reportValidity(); // Muestra los mensajes rojos de alerta por defecto
+            }
+        });
+
+        // --- EVENTO: GENERAR PDF Y GUARDAR (SUBMIT POR DEFECTO) ---
+        document.getElementById('notaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Guardamos en la tabla y extraemos los datos capturados
+            const datos = procesarGuardadoRegistro();
 
             // --- GENERAR EL PDF ---
             const { jsPDF } = window.jspdf;
@@ -331,41 +338,40 @@
             doc.text("Nota de Recepción de Equipo", 20, 30);
             
             doc.setFontSize(12);
-            doc.text(`Fecha: ${fecha}`, 150, 20);
+            doc.text(`Fecha: ${datos.fecha}`, 150, 20);
             doc.setLineWidth(0.5);
             doc.line(20, 35, 190, 35);
 
             doc.setFont(undefined, 'bold'); doc.text("Datos del Cliente:", 20, 45);
-            doc.setFont(undefined, 'normal'); doc.text(`Nombre: ${cliente}`, 20, 55); doc.text(`Teléfono: ${telefono}`, 20, 65);
+            doc.setFont(undefined, 'normal'); doc.text(`Nombre: ${datos.cliente}`, 20, 55); doc.text(`Teléfono: ${datos.telefono}`, 20, 65);
 
             doc.setFont(undefined, 'bold'); doc.text("Datos del Equipo:", 20, 80);
-            doc.setFont(undefined, 'normal'); doc.text(`Marca: ${marca}`, 20, 90); doc.text(`Modelo: ${modelo}`, 20, 100);
+            doc.setFont(undefined, 'normal'); doc.text(`Marca: ${datos.marca}`, 20, 90); doc.text(`Modelo: ${datos.modelo}`, 20, 100);
 
             doc.setFont(undefined, 'bold'); doc.text("Detalles del Servicio:", 20, 115);
-            doc.setFont(undefined, 'normal'); doc.text(`Descripción: ${servicio}`, 20, 125);
+            doc.setFont(undefined, 'normal'); doc.text(`Descripción: ${datos.servicio}`, 20, 125);
             
             doc.setFontSize(14); doc.setFont(undefined, 'bold');
-            doc.text(`Costo Total Estimado: $${costo} MXN`, 20, 140);
+            doc.text(`Costo Total Estimado: $${datos.costo} MXN`, 20, 140);
 
-            const nombreArchivo = `Nota_${cliente.replace(/\s+/g, '_')}_${fecha.replace(/\//g, '-')}.pdf`;
+            const nombreArchivo = `Nota_${datos.cliente.replace(/\s+/g, '_')}_${datos.fecha.replace(/\//g, '-')}.pdf`;
             doc.save(nombreArchivo);
 
             // --- MOSTRAR BOTÓN WHATSAPP ---
             const btnWhatsapp = document.getElementById('btnWhatsapp');
             btnWhatsapp.style.display = 'block';
             
-            const mensaje = `Hola ${cliente},\n\nGracias por confiar en *ServicioRM-Jedi*.\nHemos recibido tu equipo (*${marca} ${modelo}*) para el siguiente servicio:\n🛠️ *${servicio}*\n💰 *Costo estimado:* $${costo}\n\nTe acabo de generar y guardar tu nota de servicio en PDF. ¡Te mantendré informado!`;
-            const urlWhatsapp = `https://wa.me/52${telefono}?text=${encodeURIComponent(mensaje)}`;
+            const mensaje = `Hola ${datos.cliente},\n\nGracias por confiar en *ServicioRM-Jedi*.\nHemos recibido tu equipo (*${datos.marca} ${datos.modelo}*) para el siguiente servicio:\n🛠️ *${datos.servicio}*\n💰 *Costo estimado:* $${datos.costo}\n\nTe acabo de generar y guardar tu nota de servicio en PDF. ¡Te mantendré informado!`;
+            const urlWhatsapp = `https://wa.me/52${datos.telefono}?text=${encodeURIComponent(mensaje)}`;
 
             btnWhatsapp.onclick = function() { window.open(urlWhatsapp, '_blank'); };
             
-            // Opcional: Limpiar el formulario tras generar la nota
             document.getElementById('notaForm').reset();
         });
 
         // --- 3. LÓGICA DEL COTIZADOR MERCADO LIBRE ---
         const MARGEN_GANANCIA = 1.30; 
-        const productosML = ['MLM1443214567', 'MLM9876543210']; // Pon aquí tus IDs reales
+        const productosML = ['MLM1443214567', 'MLM9876543210'];
 
         async function cargarPreciosComponentes() {
             const contenedor = document.getElementById('contenedor-componentes');
@@ -395,7 +401,6 @@
             }
         }
 
-        // Ejecutar funciones al cargar la página
         window.addEventListener('DOMContentLoaded', () => {
             renderizarTabla();
             cargarPreciosComponentes();
