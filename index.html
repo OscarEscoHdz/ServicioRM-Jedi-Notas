@@ -14,7 +14,7 @@
             --text-color: #333333;
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--background); color: var(--text-color); margin: 0; padding: 20px; box-sizing: border-box; }
-        .container { max-width: 1100px; margin: 0 auto; } /* Ensanchado un poco para las nuevas columnas */
+        .container { max-width: 1100px; margin: 0 auto; }
         h1, h2 { text-align: center; color: var(--primary-color); }
         .card { background-color: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; overflow-x: auto; }
         .form-group { margin-bottom: 15px; }
@@ -44,17 +44,16 @@
         }
 
         .componentes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
-        .componente-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center; background-color: #fafafa; }
+        .componente-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .componente-img { max-width: 100px; height: 100px; object-fit: contain; margin-bottom: 10px; }
-        .componente-titulo { font-size: 14px; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .componente-titulo { font-size: 14px; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 40px;}
         .precio-original { font-size: 12px; color: #888; text-decoration: line-through; }
         .precio-final { font-size: 18px; font-weight: bold; color: var(--primary-color); margin: 5px 0; }
-        .badge-ganancia { background-color: #28a745; color: white; font-size: 11px; padding: 3px 6px; border-radius: 4px; display: inline-block; }
+        .badge-ganancia { background-color: #28a745; color: white; font-size: 11px; padding: 3px 6px; border-radius: 4px; display: inline-block; margin-bottom: 10px;}
     </style>
 </head>
 <body>
 
-    <!-- Pantalla de Login -->
     <div id="login-container" class="container" style="text-align: center; margin-top: 10vh;">
         <div class="card" style="max-width: 400px; margin: 0 auto;">
             <h1>ServicioRM-Jedi</h1>
@@ -64,7 +63,6 @@
         </div>
     </div>
 
-    <!-- Pantalla de la Aplicación -->
     <div id="app-container" class="container" style="display: none;">
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -112,7 +110,6 @@
                     </select>
                 </div>
 
-                <!-- Campo de Observaciones (Solo interno) -->
                 <div class="form-group">
                     <label for="observaciones">Observaciones Internas (Opcional - No sale en el PDF)</label>
                     <textarea id="observaciones" rows="2" placeholder="Ej. Equipo con rayones, falta tecla, etc."></textarea>
@@ -151,6 +148,22 @@
             </table>
         </div>
 
+        <!-- COTIZADOR INTERACTIVO -->
+        <div class="card">
+            <h2>Cotizador Interactivo de Componentes</h2>
+            <div class="form-row" style="align-items: flex-end;">
+                <div class="form-group" style="flex: 3; margin-bottom: 0;">
+                    <label for="inputCotizador">Ingresa el ID de Mercado Libre (Ej. MLM1443...) o un Precio Base ($)</label>
+                    <input type="text" id="inputCotizador" placeholder="Ej. MLM1443214567 o 500">
+                </div>
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <button type="button" id="btnCotizar" class="btn" style="margin-top: 0;">Buscar / Cotizar</button>
+                </div>
+            </div>
+            <!-- Aquí se agregarán las tarjetas dinámicamente -->
+            <div id="contenedor-componentes" class="componentes-grid"></div>
+        </div>
+
         <div class="card">
             <h2>Lista de Servicios y Precios Base</h2>
             <table>
@@ -158,20 +171,11 @@
                     <tr><th>Servicio</th><th>Costo Aproximado</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td>Revisión y Diagnóstico</td><td>$70.00</td></tr>
-                    <tr><td>Mantenimiento Físico General (Limpieza interna)</td><td>$350.00</td></tr>
-                    <tr><td>Instalación de Office (Permanente) (Word/Excel/PowetPoint)</td><td>$350.00</td></tr>
-                    <tr><td>Instalación de Windows (Permanente)</td><td>$450.00</td></tr>
-                    <tr><td>Instalación de Antivirus (Licencia de 1 año)</td><td>$150.00</td></tr>
-                    <tr><td>Instalación de AutoCad</td><td>$350.00</td></tr>
-                    <tr><td>Instalación de CorelDraw</td><td>$350.00</td></tr>
+                    <tr><td>Revisión y Diagnóstico</td><td>$150.00</td></tr>
+                    <tr><td>Mantenimiento Físico General</td><td>$350.00</td></tr>
+                    <tr><td>Instalación de Windows (Formateo)</td><td>$400.00</td></tr>
                 </tbody>
             </table>
-        </div>
-
-        <div class="card">
-            <h2>Cotizador de Componentes</h2>
-            <div id="contenedor-componentes" class="componentes-grid"></div>
         </div>
     </div>
 
@@ -195,6 +199,7 @@
 
         let registrosBD = [];
         let editandoId = null;
+        let confirmDeleteId = null; // Variable para manejar la confirmación de borrado móvil
         let unsubscribeDB = null;
 
         const loginContainer = document.getElementById('login-container');
@@ -217,7 +222,6 @@
                 appContainer.style.display = 'block';
                 userInfo.textContent = `Hola, ${user.email}`;
                 iniciarListenerBD();
-                cargarPreciosComponentes();
             } else {
                 loginContainer.style.display = 'block';
                 appContainer.style.display = 'none';
@@ -248,8 +252,6 @@
 
             registrosBD.forEach((registro) => {
                 const tr = document.createElement('tr');
-                
-                // Manejo de registros antiguos que no tenían la variable estadoEntrega
                 const estadoEntregaActual = registro.estadoEntrega || 'Pendiente de entrega';
 
                 if (editandoId === registro.id) {
@@ -273,14 +275,30 @@
                             </select>
                         </td>
                         <td>
-                            <button class="btn-sm btn-success" onclick="guardarEdicion('${registro.id}')">✔</button>
-                            <button class="btn-sm btn-danger" onclick="cancelarEdicion()">✖</button>
+                            <button class="btn-sm btn-success" onclick="guardarEdicion('${registro.id}')">✔ Guardar</button>
+                            <button class="btn-sm btn-secondary" onclick="cancelarEdicion()">✖</button>
                         </td>
                     `;
                 } else {
                     let colorEstadoPago = registro.estado === 'Pagado' ? '#28a745' : '#dc3545';
                     let colorEstadoEntrega = estadoEntregaActual === 'Entregado' ? '#28a745' : '#dc3545';
                     
+                    // Lógica para botones de acciones (Evita el alert de iOS)
+                    let botonesAcciones = '';
+                    if (confirmDeleteId === registro.id) {
+                        botonesAcciones = `
+                            <div style="display:flex; flex-direction:column; gap:4px;">
+                                <button class="btn-sm btn-danger" style="font-weight:bold;" onclick="ejecutarEliminar('${registro.id}')">Confirmar</button>
+                                <button class="btn-sm btn-secondary" onclick="cancelarEliminar()">Cancelar</button>
+                            </div>
+                        `;
+                    } else {
+                        botonesAcciones = `
+                            <button class="btn-sm btn-edit" onclick="activarEdicion('${registro.id}')">Editar</button>
+                            <button class="btn-sm btn-danger" onclick="pedirEliminar('${registro.id}')">Borrar</button>
+                        `;
+                    }
+
                     tr.innerHTML = `
                         <td>${registro.cliente}</td>
                         <td>${registro.equipo}</td>
@@ -300,10 +318,7 @@
                                 <option value="Entregado" ${estadoEntregaActual === 'Entregado' ? 'selected' : ''}>Entregado</option>
                             </select>
                         </td>
-                        <td>
-                            <button class="btn-sm btn-edit" onclick="activarEdicion('${registro.id}')">Editar</button>
-                            <button class="btn-sm btn-danger" onclick="eliminarRegistro('${registro.id}')">Borrar</button>
-                        </td>
+                        <td>${botonesAcciones}</td>
                     `;
                 }
                 tbody.appendChild(tr);
@@ -318,9 +333,18 @@
             await updateDoc(doc(db, "clientes", id), { estadoEntrega: nuevoEstadoEntrega });
         };
 
-        window.activarEdicion = (id) => { editandoId = id; renderizarTabla(); };
+        window.activarEdicion = (id) => { editandoId = id; confirmDeleteId = null; renderizarTabla(); };
         window.cancelarEdicion = () => { editandoId = null; renderizarTabla(); };
         
+        // --- NUEVA LÓGICA DE BORRADO SEGURO PARA iOS ---
+        window.pedirEliminar = (id) => { confirmDeleteId = id; editandoId = null; renderizarTabla(); };
+        window.cancelarEliminar = () => { confirmDeleteId = null; renderizarTabla(); };
+        window.ejecutarEliminar = async (id) => {
+            await deleteDoc(doc(db, "clientes", id));
+            confirmDeleteId = null;
+        };
+        // -----------------------------------------------
+
         window.guardarEdicion = async (id) => {
             await updateDoc(doc(db, "clientes", id), {
                 cliente: document.getElementById(`ed-cliente-${id}`).value,
@@ -335,12 +359,6 @@
             editandoId = null;
         };
         
-        window.eliminarRegistro = async (id) => {
-            if(confirm('¿Estás seguro de que deseas borrar este registro de la nube?')) {
-                await deleteDoc(doc(db, "clientes", id));
-            }
-        };
-
         async function procesarGuardadoRegistro() {
             const cliente = document.getElementById('cliente').value;
             const telefono = document.getElementById('telefono').value;
@@ -358,7 +376,7 @@
                 observaciones: observaciones,
                 costo: costo,
                 estado: 'Pendiente de pago',
-                estadoEntrega: 'Pendiente de entrega', // Valor por defecto al crear
+                estadoEntrega: 'Pendiente de entrega', 
                 fechaCreacion: new Date().getTime()
             };
             
@@ -385,7 +403,6 @@
             e.preventDefault();
             const datos = await procesarGuardadoRegistro();
 
-            // --- GENERAR EL PDF (Sin observaciones) ---
             const { jsPDF } = window.jspdf;
             const docPdf = new jsPDF();
 
@@ -408,7 +425,6 @@
 
             docPdf.save(`Nota_${datos.cliente.replace(/\s+/g, '_')}_${datos.fecha.replace(/\//g, '-')}.pdf`);
 
-            // --- MOSTRAR BOTÓN WHATSAPP (Sin observaciones) ---
             const btnWhatsapp = document.getElementById('btnWhatsapp');
             btnWhatsapp.style.display = 'block';
             
@@ -420,33 +436,72 @@
             document.getElementById('notaForm').reset();
         });
 
-        // --- LÓGICA DEL COTIZADOR MERCADO LIBRE ---
+        // --- COTIZADOR INTERACTIVO ---
         const MARGEN_GANANCIA = 1.30; 
-        const productosML = ['MLM1443214567', 'MLM9876543210']; 
+        
+        window.quitarTarjeta = (elemento) => {
+            elemento.parentElement.remove();
+        };
 
-        async function cargarPreciosComponentes() {
+        document.getElementById('btnCotizar').addEventListener('click', async () => {
+            const input = document.getElementById('inputCotizador').value.trim();
             const contenedor = document.getElementById('contenedor-componentes');
-            if(productosML.length === 0) return;
-            contenedor.innerHTML = '';
-            for (const id of productosML) {
+            
+            if (!input) return;
+            
+            // Verificamos si es un número directo (ej. 500, $500, 500.50)
+            const valorNumerico = parseFloat(input.replace(/[^0-9.-]+/g,""));
+            const esIDMercadoLibre = input.toUpperCase().startsWith('MLM');
+
+            if (esIDMercadoLibre) {
+                const btnOriginal = document.getElementById('btnCotizar').innerText;
+                document.getElementById('btnCotizar').innerText = 'Buscando...';
+                
                 try {
+                    const id = input.toUpperCase().replace(/[^A-Z0-9]/g, '');
                     const respuesta = await fetch(`https://api.mercadolibre.com/items/${id}`);
-                    if (!respuesta.ok) continue;
-                    const datos = await respuesta.json();
-                    const precioConInstalacion = Math.ceil(datos.price * MARGEN_GANANCIA);
                     
-                    const card = document.createElement('div');
-                    card.className = 'componente-card';
-                    card.innerHTML = `
-                        <img src="${datos.thumbnail}" alt="Componente" class="componente-img">
-                        <div class="componente-titulo" title="${datos.title}">${datos.title}</div>
-                        <div class="precio-original">Costo base: $${datos.price.toLocaleString('es-MX')}</div>
-                        <div class="precio-final">Cotizar en: $${precioConInstalacion.toLocaleString('es-MX')}</div>
-                        <div class="badge-ganancia">Incluye instalación</div>
-                    `;
-                    contenedor.appendChild(card);
-                } catch (error) { console.error(`Error con ${id}:`, error); }
+                    if (!respuesta.ok) {
+                        alert("Producto no encontrado. Verifica el ID.");
+                    } else {
+                        const datos = await respuesta.json();
+                        const precioConInstalacion = Math.ceil(datos.price * MARGEN_GANANCIA);
+                        crearTarjetaCotizacion(datos.title, datos.price, precioConInstalacion, datos.thumbnail);
+                    }
+                } catch (error) {
+                    alert("Error al conectar con Mercado Libre.");
+                }
+                
+                document.getElementById('btnCotizar').innerText = btnOriginal;
+            } 
+            else if (!isNaN(valorNumerico) && valorNumerico > 0) {
+                // Es un precio manual
+                const precioConInstalacion = Math.ceil(valorNumerico * MARGEN_GANANCIA);
+                // Imagen genérica de caja de componentes
+                const imgGenerica = "https://cdn-icons-png.flaticon.com/512/3135/3135695.png";
+                crearTarjetaCotizacion("Cotización Manual Genérica", valorNumerico, precioConInstalacion, imgGenerica);
+            } 
+            else {
+                alert("Por favor ingresa un ID válido de Mercado Libre (Ej. MLM123...) o un precio en números.");
             }
+            
+            document.getElementById('inputCotizador').value = ''; // Limpiar el input
+        });
+
+        function crearTarjetaCotizacion(titulo, precioBase, precioFinal, imagen) {
+            const contenedor = document.getElementById('contenedor-componentes');
+            const card = document.createElement('div');
+            card.className = 'componente-card';
+            card.innerHTML = `
+                <img src="${imagen}" alt="Componente" class="componente-img">
+                <div class="componente-titulo" title="${titulo}">${titulo}</div>
+                <div class="precio-original">Costo base: $${precioBase.toLocaleString('es-MX')}</div>
+                <div class="precio-final">Cotizar en: $${precioFinal.toLocaleString('es-MX')}</div>
+                <div class="badge-ganancia">Incluye instalación (${(MARGEN_GANANCIA - 1) * 100}%)</div>
+                <button class="btn-sm btn-danger" style="margin-top: 10px; width: 100%;" onclick="quitarTarjeta(this)">Quitar</button>
+            `;
+            // Insertar siempre al principio (arriba de las anteriores)
+            contenedor.insertBefore(card, contenedor.firstChild);
         }
     </script>
 </body>
