@@ -14,12 +14,12 @@
             --text-color: #333333;
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--background); color: var(--text-color); margin: 0; padding: 20px; box-sizing: border-box; }
-        .container { max-width: 1000px; margin: 0 auto; }
+        .container { max-width: 1100px; margin: 0 auto; } /* Ensanchado un poco para las nuevas columnas */
         h1, h2 { text-align: center; color: var(--primary-color); }
         .card { background-color: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; overflow-x: auto; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
         
         .btn { background-color: var(--primary-color); color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 10px; transition: 0.3s; }
         .btn:hover { background-color: #004494; }
@@ -33,10 +33,10 @@
         .btn-danger { background-color: #d9534f; }
         .btn-success { background-color: #5cb85c; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 700px; }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 1000px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; font-size: 14px; vertical-align: top; }
         th { background-color: var(--primary-color); color: white; }
-        .estado-select { font-weight: bold; padding: 5px; cursor: pointer; }
+        .estado-select { font-weight: bold; padding: 5px; cursor: pointer; width: 100%; }
 
         @media (min-width: 600px) {
             .form-row { display: flex; gap: 15px; }
@@ -112,6 +112,12 @@
                     </select>
                 </div>
 
+                <!-- Campo de Observaciones (Solo interno) -->
+                <div class="form-group">
+                    <label for="observaciones">Observaciones Internas (Opcional - No sale en el PDF)</label>
+                    <textarea id="observaciones" rows="2" placeholder="Ej. Equipo con rayones, falta tecla, etc."></textarea>
+                </div>
+
                 <div class="form-group">
                     <label for="costo">Costo Estimado ($)</label>
                     <input type="number" id="costo" required placeholder="Ej. 350">
@@ -131,14 +137,16 @@
                         <th>Cliente</th>
                         <th>Equipo</th>
                         <th>Teléfono</th>
-                        <th>Trabajo Realizado</th>
+                        <th>Servicio</th>
+                        <th>Observaciones (Internas)</th>
                         <th>Costo ($)</th>
-                        <th>Estado de Pago</th>
+                        <th>Pago</th>
+                        <th>Entrega</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tbody-clientes">
-                    <tr><td colspan="7" style="text-align: center;">Cargando registros de la nube...</td></tr>
+                    <tr><td colspan="9" style="text-align: center;">Cargando registros de la nube...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -163,13 +171,11 @@
         </div>
     </div>
 
-    <!-- SCRIPT TIPO MÓDULO PARA FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
 
-        // Configuración extraída de tu imagen
         const firebaseConfig = {
             apiKey: "AIzaSyAN3XUeaePVSNTzeMbqxso44ebQiNU0Ji8",
             authDomain: "serviciorm-jedi.firebaseapp.com",
@@ -183,7 +189,6 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Variables Globales
         let registrosBD = [];
         let editandoId = null;
         let unsubscribeDB = null;
@@ -192,7 +197,6 @@
         const appContainer = document.getElementById('app-container');
         const userInfo = document.getElementById('user-info');
 
-        // --- SISTEMA DE AUTENTICACIÓN ---
         document.getElementById('btn-login').addEventListener('click', () => {
             const provider = new GoogleAuthProvider();
             signInWithPopup(auth, provider).catch(error => alert("Error al iniciar sesión: " + error.message));
@@ -200,7 +204,7 @@
 
         document.getElementById('btn-logout').addEventListener('click', () => {
             signOut(auth);
-            if(unsubscribeDB) unsubscribeDB(); // Detener lectura al cerrar sesión
+            if(unsubscribeDB) unsubscribeDB();
         });
 
         onAuthStateChanged(auth, (user) => {
@@ -216,7 +220,6 @@
             }
         });
 
-        // --- LECTURA EN TIEMPO REAL (FIRESTORE) ---
         function iniciarListenerBD() {
             const clientesRef = collection(db, "clientes");
             const q = query(clientesRef, orderBy("fechaCreacion", "desc"));
@@ -227,36 +230,42 @@
                     registrosBD.push({ id: docSnap.id, ...docSnap.data() });
                 });
                 renderizarTabla();
-            }, (error) => {
-                if (error.code === 'permission-denied') {
-                    alert("Acceso denegado. Asegúrate de que el correo con el que iniciaste sesión sea exactamente el mismo que pusiste en las reglas de seguridad de Firebase.");
-                }
             });
         }
 
-        // --- CRUD Y RENDERIZADO DE TABLA ---
         function renderizarTabla() {
             const tbody = document.getElementById('tbody-clientes');
             tbody.innerHTML = '';
             
             if (registrosBD.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No hay clientes registrados.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">No hay clientes registrados.</td></tr>';
                 return;
             }
 
             registrosBD.forEach((registro) => {
                 const tr = document.createElement('tr');
+                
+                // Manejo de registros antiguos que no tenían la variable estadoEntrega
+                const estadoEntregaActual = registro.estadoEntrega || 'Pendiente de entrega';
+
                 if (editandoId === registro.id) {
                     tr.innerHTML = `
                         <td><input type="text" id="ed-cliente-${registro.id}" value="${registro.cliente}"></td>
                         <td><input type="text" id="ed-equipo-${registro.id}" value="${registro.equipo}"></td>
                         <td><input type="text" id="ed-telefono-${registro.id}" value="${registro.telefono}"></td>
                         <td><input type="text" id="ed-trabajo-${registro.id}" value="${registro.trabajo}"></td>
-                        <td><input type="number" id="ed-costo-${registro.id}" value="${registro.costo}" style="width: 80px;"></td>
+                        <td><textarea id="ed-obs-${registro.id}" rows="2">${registro.observaciones || ''}</textarea></td>
+                        <td><input type="number" id="ed-costo-${registro.id}" value="${registro.costo}" style="width: 70px;"></td>
                         <td>
                             <select id="ed-estado-${registro.id}" class="estado-select">
-                                <option value="Pendiente de pago" ${registro.estado === 'Pendiente de pago' ? 'selected' : ''}>Pendiente de pago</option>
+                                <option value="Pendiente de pago" ${registro.estado === 'Pendiente de pago' ? 'selected' : ''}>Pendiente</option>
                                 <option value="Pagado" ${registro.estado === 'Pagado' ? 'selected' : ''}>Pagado</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select id="ed-entrega-${registro.id}" class="estado-select">
+                                <option value="Pendiente de entrega" ${estadoEntregaActual === 'Pendiente de entrega' ? 'selected' : ''}>Pendiente</option>
+                                <option value="Entregado" ${estadoEntregaActual === 'Entregado' ? 'selected' : ''}>Entregado</option>
                             </select>
                         </td>
                         <td>
@@ -265,17 +274,26 @@
                         </td>
                     `;
                 } else {
-                    let colorEstado = registro.estado === 'Pagado' ? '#28a745' : '#dc3545';
+                    let colorEstadoPago = registro.estado === 'Pagado' ? '#28a745' : '#dc3545';
+                    let colorEstadoEntrega = estadoEntregaActual === 'Entregado' ? '#28a745' : '#dc3545';
+                    
                     tr.innerHTML = `
                         <td>${registro.cliente}</td>
                         <td>${registro.equipo}</td>
                         <td>${registro.telefono}</td>
                         <td>${registro.trabajo}</td>
+                        <td style="font-size: 12px; max-width: 180px; word-wrap: break-word;">${registro.observaciones || 'N/A'}</td>
                         <td>$${registro.costo}</td>
                         <td>
-                            <select onchange="cambiarEstadoDesdeSelect('${registro.id}', this.value)" class="estado-select" style="color: ${colorEstado};">
-                                <option value="Pendiente de pago" ${registro.estado === 'Pendiente de pago' ? 'selected' : ''}>Pendiente de pago</option>
+                            <select onchange="cambiarEstadoDesdeSelect('${registro.id}', this.value)" class="estado-select" style="color: ${colorEstadoPago};">
+                                <option value="Pendiente de pago" ${registro.estado === 'Pendiente de pago' ? 'selected' : ''}>Pendiente</option>
                                 <option value="Pagado" ${registro.estado === 'Pagado' ? 'selected' : ''}>Pagado</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select onchange="cambiarEstadoEntregaDesdeSelect('${registro.id}', this.value)" class="estado-select" style="color: ${colorEstadoEntrega};">
+                                <option value="Pendiente de entrega" ${estadoEntregaActual === 'Pendiente de entrega' ? 'selected' : ''}>Pendiente</option>
+                                <option value="Entregado" ${estadoEntregaActual === 'Entregado' ? 'selected' : ''}>Entregado</option>
                             </select>
                         </td>
                         <td>
@@ -288,36 +306,44 @@
             });
         }
 
-        // Exportamos las funciones a window para que los botones HTML (onclick) puedan usarlas
         window.cambiarEstadoDesdeSelect = async (id, nuevoEstado) => {
             await updateDoc(doc(db, "clientes", id), { estado: nuevoEstado });
         };
+        
+        window.cambiarEstadoEntregaDesdeSelect = async (id, nuevoEstadoEntrega) => {
+            await updateDoc(doc(db, "clientes", id), { estadoEntrega: nuevoEstadoEntrega });
+        };
+
         window.activarEdicion = (id) => { editandoId = id; renderizarTabla(); };
         window.cancelarEdicion = () => { editandoId = null; renderizarTabla(); };
+        
         window.guardarEdicion = async (id) => {
             await updateDoc(doc(db, "clientes", id), {
                 cliente: document.getElementById(`ed-cliente-${id}`).value,
                 equipo: document.getElementById(`ed-equipo-${id}`).value,
                 telefono: document.getElementById(`ed-telefono-${id}`).value,
                 trabajo: document.getElementById(`ed-trabajo-${id}`).value,
+                observaciones: document.getElementById(`ed-obs-${id}`).value,
                 costo: document.getElementById(`ed-costo-${id}`).value,
-                estado: document.getElementById(`ed-estado-${id}`).value
+                estado: document.getElementById(`ed-estado-${id}`).value,
+                estadoEntrega: document.getElementById(`ed-entrega-${id}`).value
             });
             editandoId = null;
         };
+        
         window.eliminarRegistro = async (id) => {
             if(confirm('¿Estás seguro de que deseas borrar este registro de la nube?')) {
                 await deleteDoc(doc(db, "clientes", id));
             }
         };
 
-        // --- GUARDAR REGISTROS (CREACIÓN) ---
         async function procesarGuardadoRegistro() {
             const cliente = document.getElementById('cliente').value;
             const telefono = document.getElementById('telefono').value;
             const marca = document.getElementById('marca').value;
             const modelo = document.getElementById('modelo').value;
             const servicio = document.getElementById('servicio').value;
+            const observaciones = document.getElementById('observaciones').value;
             const costo = document.getElementById('costo').value;
 
             const nuevoRegistro = {
@@ -325,16 +351,17 @@
                 equipo: `${marca} ${modelo}`,
                 telefono: telefono,
                 trabajo: servicio,
+                observaciones: observaciones,
                 costo: costo,
                 estado: 'Pendiente de pago',
-                fechaCreacion: new Date().getTime() // Para ordenar del más nuevo al más viejo
+                estadoEntrega: 'Pendiente de entrega', // Valor por defecto al crear
+                fechaCreacion: new Date().getTime()
             };
             
             try {
                 await addDoc(collection(db, "clientes"), nuevoRegistro);
             } catch(e) {
                 console.error("Error al guardar: ", e);
-                alert("Ocurrió un error al guardar en la nube.");
             }
             
             return { cliente, telefono, marca, modelo, servicio, costo, fecha: new Date().toLocaleDateString('es-MX') };
@@ -354,7 +381,7 @@
             e.preventDefault();
             const datos = await procesarGuardadoRegistro();
 
-            // --- GENERAR EL PDF ---
+            // --- GENERAR EL PDF (Sin observaciones) ---
             const { jsPDF } = window.jspdf;
             const docPdf = new jsPDF();
 
@@ -362,22 +389,27 @@
             docPdf.setFontSize(16); docPdf.setTextColor(0, 0, 0); docPdf.text("Nota de Recepción de Equipo", 20, 30);
             docPdf.setFontSize(12); docPdf.text(`Fecha: ${datos.fecha}`, 150, 20);
             docPdf.setLineWidth(0.5); docPdf.line(20, 35, 190, 35);
+            
             docPdf.setFont(undefined, 'bold'); docPdf.text("Datos del Cliente:", 20, 45);
             docPdf.setFont(undefined, 'normal'); docPdf.text(`Nombre: ${datos.cliente}`, 20, 55); docPdf.text(`Teléfono: ${datos.telefono}`, 20, 65);
+            
             docPdf.setFont(undefined, 'bold'); docPdf.text("Datos del Equipo:", 20, 80);
             docPdf.setFont(undefined, 'normal'); docPdf.text(`Marca: ${datos.marca}`, 20, 90); docPdf.text(`Modelo: ${datos.modelo}`, 20, 100);
+            
             docPdf.setFont(undefined, 'bold'); docPdf.text("Detalles del Servicio:", 20, 115);
             docPdf.setFont(undefined, 'normal'); docPdf.text(`Descripción: ${datos.servicio}`, 20, 125);
+            
             docPdf.setFontSize(14); docPdf.setFont(undefined, 'bold');
             docPdf.text(`Costo Total Estimado: $${datos.costo} MXN`, 20, 140);
 
             docPdf.save(`Nota_${datos.cliente.replace(/\s+/g, '_')}_${datos.fecha.replace(/\//g, '-')}.pdf`);
 
-            // --- MOSTRAR BOTÓN WHATSAPP ---
+            // --- MOSTRAR BOTÓN WHATSAPP (Sin observaciones) ---
             const btnWhatsapp = document.getElementById('btnWhatsapp');
             btnWhatsapp.style.display = 'block';
             
-            const mensaje = `Hola ${datos.cliente},\n\nGracias por confiar en *ServicioRM-Jedi*.\nHemos recibido tu equipo (*${datos.marca} ${datos.modelo}*) para el siguiente servicio:\n🛠️ *${datos.servicio}*\n💰 *Costo estimado:* $${datos.costo}\n\nTe acabo de generar tu nota de servicio en PDF. ¡Te mantendré informado!`;
+            let mensaje = `Hola ${datos.cliente},\n\nGracias por confiar en *ServicioRM-Jedi*.\nHemos recibido tu equipo (*${datos.marca} ${datos.modelo}*) para el siguiente servicio:\n🛠️ *${datos.servicio}*\n💰 *Costo estimado:* $${datos.costo}\n\nTe acabo de generar tu nota de servicio en PDF. ¡Te mantendré informado!`;
+            
             const urlWhatsapp = `https://wa.me/52${datos.telefono}?text=${encodeURIComponent(mensaje)}`;
 
             btnWhatsapp.onclick = function() { window.open(urlWhatsapp, '_blank'); };
@@ -386,7 +418,7 @@
 
         // --- LÓGICA DEL COTIZADOR MERCADO LIBRE ---
         const MARGEN_GANANCIA = 1.30; 
-        const productosML = ['MLM1443214567', 'MLM9876543210']; // Modifica los IDs aquí
+        const productosML = ['MLM1443214567', 'MLM9876543210']; 
 
         async function cargarPreciosComponentes() {
             const contenedor = document.getElementById('contenedor-componentes');
